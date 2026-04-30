@@ -1,70 +1,101 @@
-# Getting Started with Create React App
+# GirlMath
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+GirlMath is a personal finance tool built for first-generation individuals who are breaking the cycle of financial survival mode. It helps users get out of debt, plan their savings goals, and start investing in their future.
 
-## Available Scripts
+## 🧠 The Problem
+First-generation individuals are often the first in their families to navigate credit card debt, student loans, and long-term financial planning — without a safety net, without guidance, and without tools built for their reality. Most financial apps assume a baseline of financial literacy that many of us simply weren't taught.
+GirlMath was built from personal experience. The snowball method helped me pay off most of my credit card debt. When one creditor sued me, I realized how many people are in the same position with no roadmap out. This app is that roadmap.
 
-In the project directory, you can run:
+## 👤 Who It's For
+First-generation individuals who are:
+* Carrying credit card debt, student loans, or medical bills
+* Wanting to save for a home, emergency fund, or future investment
+* Ready to stop surviving and start planning
 
-### `npm start`
+## ✨ Features (v1)
+### 💳 Debt Tracker
+Add and manage all your debts in one place — credit cards, student loans, medical bills, and more. Track balances, interest rates, and minimum payments.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### ❄️ Snowball Calculator
+The debt snowball method, visualized. Enter your debts and an optional extra monthly payment, and GirlMath generates a month-by-month payoff timeline with a live chart showing exactly when each debt hits zero.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 🏦 Savings Goals
+Set savings goals (home down payment, emergency fund, etc.), track your progress, and see your projected completion date based on your monthly contributions.
 
-### `npm test`
+### 📊 Financial Dashboard
+A single view of your complete financial picture — total debt, months to debt-free, total saved, and savings goal progress all in one place.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 🏗️ Technical Architecture
+### Backend — Spring Boot API
+* Java 17 + Spring Boot 3.x
+* Spring Data JPA + Hibernate for ORM
+* Spring Security for API protection
+* PostgreSQL for relational data storage
+* RESTful API design with full CRUD operations
+* Maven for dependency management
 
-### `npm run build`
+### Frontend — React
+* React 18 with functional components and hooks
+* React Router for client-side navigation
+* Recharts for interactive debt payoff visualizations
+* Axios for API communication
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### DevOps
+* Git + GitHub for version control
+* Separate frontend/backend repositories
+* Local Docker support planned for v2
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 🔌 API Endpoints
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+| Method | Endpoint |
+| :--- | :--- |
+| `GET` | `/api/dashboard` |
+| `GET/POST/PUT/DELETE` | `/api/debts` |
+| `GET/POST/PUT/DELETE` | `/api/savings-goals` |
+| `GET` | `/api/snowball/calculate?extraPayment=0` |
+| `GET` | `/api/savings-projection` |
+| `GET` | `/api/savings-projection/{id}` |
 
-### `npm run eject`
+## 🚀 Running Locally
+Prerequisites
+* Java 17
+* Maven
+* PostgreSQL
+* Node.js + npm
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Backend Setup
+```
+# Clone the repo
+git clone https://github.com/jennyfertellez/girlMath.git
+cd girlMath
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+# Create the database
+psql -d postgres -c "CREATE DATABASE girlmath;"
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+# Update application.properties with your PostgreSQL username
+# Then run the app
+mvn spring-boot:run
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Frontend Setup
+```
+# Clone the frontend repo
+git clone https://github.com/jennyfertellez/girl-math-ui.git
+cd girl-math-ui
 
-## Learn More
+# Install dependencies
+npm install
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+# Start the app
+npm start
+```
+The app will be running at `http://localhost:3000` with the API at `http://localhost:8080`.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## 💡 Why I Built This
+I used the debt snowball method to pay off most of my credit cards. I know what it feels like to get a lawsuit from a creditor. I know what it feels like to not have anyone in your family to ask about APR, credit scores, or down payments.
+GirlMath is the tool I wish I had. And I built it because I know I'm not alone.
 
-### Code Splitting
+## 👩‍💻 Built By
+Jennifer Tellez — Software Engineer
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+[GitHub](https://github.com/jennyfertellez) • [LinkedIn](https://www.linkedin.com/in/jennifer-tellez-vera/)
