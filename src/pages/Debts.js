@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { getDebts, addDebt, deleteDebt } from '../services/api';
+import { getDebts, addDebt, deleteDebt, updateDebt } from '../services/api';
 
 function Debts() {
   const [debts, setDebts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingDebt, setEditingDebt] = useState(null);
   const [form, setForm] = useState({
     name: '',
     balance: '',
@@ -31,6 +32,20 @@ function Debts() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const handleEdit = (debt) => {
+    setEditingDebt(debt);
+    setForm({
+      name: debt.name,
+      balance: debt.balance,
+      interestRate: debt.interestRate,
+      minimumPayment: debt.minimumPayment,
+      monthlyBudget: debt.monthlyBudget,
+      debtType: debt.debtType,
+    });
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleSubmit = () => {
     const debt = {
       name: form.name,
@@ -40,9 +55,15 @@ function Debts() {
       monthlyBudget: parseFloat(form.monthlyBudget),
       debtType: form.debtType,
     };
-    addDebt(debt).then(() => {
+
+    const action = editingDebt
+      ? updateDebt(editingDebt.id, debt)
+      : addDebt(debt);
+
+    action.then(() => {
       fetchDebts();
       setShowForm(false);
+      setEditingDebt(null);
       setForm({
         name: '',
         balance: '',
@@ -54,8 +75,23 @@ function Debts() {
     });
   };
 
-  const handleDelete = (id) => {
-    deleteDebt(id).then(() => fetchDebts());
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingDebt(null);
+    setForm({
+      name: '',
+      balance: '',
+      interestRate: '',
+      minimumPayment: '',
+      monthlyBudget: '',
+      debtType: 'CREDIT_CARD',
+    });
+  };
+
+  const handleDelete = (id, name) => {
+    if (window.confirm(`Are you sure you want to remove "${name}"? This cannot be undone.`)) {
+      deleteDebt(id).then(() => fetchDebts());
+    }
   };
 
   if (loading) return <div style={styles.loading}>Loading your debts...</div>;
@@ -64,14 +100,19 @@ function Debts() {
     <div style={styles.container}>
       <div style={styles.header}>
         <h1 style={styles.title}>My Debts 💳</h1>
-        <button style={styles.addButton} onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Cancel' : '+ Add Debt'}
+        <button style={styles.addButton} onClick={() => {
+          handleCancel();
+          setShowForm(!showForm);
+        }}>
+          {showForm && !editingDebt ? 'Cancel' : '+ Add Debt'}
         </button>
       </div>
 
       {showForm && (
         <div style={styles.form}>
-          <h3 style={styles.formTitle}>Add a New Debt</h3>
+          <h3 style={styles.formTitle}>
+            {editingDebt ? `Editing: ${editingDebt.name}` : 'Add a New Debt'}
+          </h3>
           <div style={styles.formGrid}>
             <input
               style={styles.input}
@@ -124,9 +165,14 @@ function Debts() {
               <option value="OTHER">Other</option>
             </select>
           </div>
-          <button style={styles.submitButton} onClick={handleSubmit}>
-            Save Debt
-          </button>
+          <div style={styles.formButtons}>
+            <button style={styles.submitButton} onClick={handleSubmit}>
+              {editingDebt ? 'Update Debt' : 'Save Debt'}
+            </button>
+            <button style={styles.cancelButton} onClick={handleCancel}>
+              Cancel
+            </button>
+          </div>
         </div>
       )}
 
@@ -148,9 +194,14 @@ function Debts() {
               <span>APR: <strong>{debt.interestRate}%</strong></span>
               <span>Min Payment: <strong>${debt.minimumPayment}</strong></span>
               <span>Monthly Budget: <strong>${debt.monthlyBudget}</strong></span>
-              <button style={styles.deleteButton} onClick={() => handleDelete(debt.id)}>
-                Remove
-              </button>
+              <div style={styles.cardActions}>
+                <button style={styles.editButton} onClick={() => handleEdit(debt)}>
+                  Edit
+                </button>
+                <button style={styles.deleteButton} onClick={() => handleDelete(debt.id, debt.name)}>
+                  Remove
+                </button>
+              </div>
             </div>
           </div>
         ))
@@ -209,10 +260,23 @@ const styles = {
     width: '100%',
     boxSizing: 'border-box',
   },
+  formButtons: {
+    display: 'flex',
+    gap: '1rem',
+  },
   submitButton: {
     backgroundColor: '#ff6b9d',
     color: 'white',
     border: 'none',
+    borderRadius: '8px',
+    padding: '0.75rem 2rem',
+    fontSize: '1rem',
+    cursor: 'pointer',
+  },
+  cancelButton: {
+    backgroundColor: 'transparent',
+    color: '#ff6b9d',
+    border: '1px solid #ff6b9d',
     borderRadius: '8px',
     padding: '0.75rem 2rem',
     fontSize: '1rem',
@@ -252,9 +316,23 @@ const styles = {
     fontSize: '0.9rem',
     color: '#555',
     alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  cardActions: {
+    display: 'flex',
+    gap: '0.5rem',
+    marginLeft: 'auto',
+  },
+  editButton: {
+    backgroundColor: '#ff6b9d',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    padding: '0.4rem 1rem',
+    cursor: 'pointer',
+    fontSize: '0.85rem',
   },
   deleteButton: {
-    marginLeft: 'auto',
     backgroundColor: 'transparent',
     color: '#ff4d4d',
     border: '1px solid #ff4d4d',
