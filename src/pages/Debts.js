@@ -356,7 +356,6 @@ const styles = {
     marginBottom: '1.5rem',
   },
   groupTitle: {
-    fontSize: '1rem',
     fontWeight: '600',
     marginBottom: '0.75rem',
     textTransform: 'uppercase',
