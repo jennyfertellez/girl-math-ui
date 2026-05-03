@@ -8,6 +8,7 @@ function Debts({ theme }) {
   const [editingDebt, setEditingDebt] = useState(null);
   const [hoveredCard, setHoveredCard] = useState(null);
   const [deleteModal, setDeleteModal] = useState({ show: false, id: null, name: '' });
+  const [activeTab, setActiveTab] = useState('active');
   const [form, setForm] = useState({
     name: '',
     balance: '',
@@ -129,6 +130,12 @@ function Debts({ theme }) {
     setDeleteModal({ show: false, id: null, name: '' });
   };
 
+  const handleMarkPaid = (debt) => {
+    if (window.confirm(`🎉 Congrats on paying off "${debt.name}"! Mark it as paid?`)) {
+       updateDebt(debt.id, { ...debt, paidOff: true }).then(() => fetchDebts());
+     }
+  };
+
   const debtTypeLabel = (debt) => {
     const labels = {
       CREDIT_CARD: '💳 Credit Card',
@@ -139,7 +146,10 @@ function Debts({ theme }) {
     return labels[debt.debtType] || debt.debtType;
   };
 
-  const groupedDebts = debts.reduce((acc, debt) => {
+  const activeDebts = debts.filter((d) => !d.paidOff);
+  const paidDebts = debts.filter((d) => d.paidOff);
+
+  const groupedDebts = activeDebts.reduce((acc, debt) => {
     const key = debt.debtType === 'OTHER' && debt.customDebtType
       ? `OTHER_${debt.customDebtType}`
       : debt.debtType;
@@ -157,14 +167,44 @@ function Debts({ theme }) {
   return (
     <div style={{ ...styles.container, fontFamily: "'Poppins', sans-serif" }}>
       <div style={styles.header}>
-        <h1 style={{ ...styles.title, color: theme.primary }}>My Debts 💳</h1>
-        <button
-          style={{ ...styles.addButton, backgroundColor: theme.primary, color: theme.textLight }}
-          onClick={() => { handleCancel(); setShowForm(!showForm); }}
-        >
-          {showForm && !editingDebt ? 'Cancel' : '+ Add Debt'}
-        </button>
-      </div>
+              <h1 style={{ ...styles.title, color: theme.primary }}>My Debts 💳</h1>
+              <button
+                style={{ ...styles.addButton, backgroundColor: theme.primary, color: theme.textLight }}
+                onClick={() => { handleCancel(); setShowForm(!showForm); }}
+              >
+                {showForm && !editingDebt ? 'Cancel' : '+ Add Debt'}
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div style={styles.tabs}>
+              <button
+                style={{
+                  ...styles.tab,
+                  borderBottom: activeTab === 'active'
+                    ? `3px solid ${theme.primary}`
+                    : '3px solid transparent',
+                  color: activeTab === 'active' ? theme.primary : theme.textMuted,
+                  fontWeight: activeTab === 'active' ? '700' : '400',
+                }}
+                onClick={() => setActiveTab('active')}
+              >
+                Active Debts ({activeDebts.length})
+              </button>
+              <button
+                style={{
+                  ...styles.tab,
+                  borderBottom: activeTab === 'paid'
+                    ? `3px solid ${theme.primary}`
+                    : '3px solid transparent',
+                  color: activeTab === 'paid' ? theme.primary : theme.textMuted,
+                  fontWeight: activeTab === 'paid' ? '700' : '400',
+                }}
+                onClick={() => setActiveTab('paid')}
+              >
+                Paid Off 🎉 ({paidDebts.length})
+              </button>
+            </div>
 
       {showForm && (
         <div style={{ ...styles.form, backgroundColor: theme.accentLight, border: `1px solid ${theme.border}` }}>
@@ -285,74 +325,121 @@ function Debts({ theme }) {
         </div>
       )}
 
-      {debts.length === 0 ? (
-        <div style={{ ...styles.empty, color: theme.textMuted }}>
-          No debts added yet. Click "Add Debt" to get started! 💪
-        </div>
-      ) : (
-        Object.entries(groupedDebts).map(([type, typeDebts]) => (
-          <div key={type} style={styles.group}>
-            <h2 style={{ ...styles.groupTitle, color: theme.textSecondary }}>
-              {debtTypeLabel(typeDebts[0])}
-            </h2>
-            {typeDebts.map((debt) => (
-              <div
-                key={debt.id}
-                style={{
-                  ...styles.card,
-                  backgroundColor: theme.cardBackground,
-                  boxShadow: hoveredCard === debt.id ? theme.shadowHover : theme.shadow,
-                  transform: hoveredCard === debt.id ? 'translateY(-4px)' : 'translateY(0)',
-                  transition: 'all 0.2s ease',
-                  border: `1px solid ${theme.border}`,
-                }}
-                onMouseEnter={() => setHoveredCard(debt.id)}
-                onMouseLeave={() => setHoveredCard(null)}
-              >
-                <div style={styles.cardTop}>
-                  <div>
-                    <div style={{ ...styles.debtName, color: theme.textPrimary }}>{debt.name}</div>
-                    <div style={{ ...styles.debtMeta, color: theme.textMuted }}>
-                      APR: {debt.interestRate}% • Min: ${debt.minimumPayment}/mo • Budget: ${debt.monthlyBudget}/mo
-                      {debt.debtType === 'CREDIT_CARD' && debt.creditLimit && (
-                        <div style={{
-                          marginTop: '0.4rem',
-                          backgroundColor: theme.accentLight,
-                          color: theme.primary,
-                          borderRadius: '6px',
-                          padding: '0.25rem 0.5rem',
-                          fontSize: '0.8rem',
-                          fontWeight: '600',
-                          display: 'inline-block',
-                        }}>
-                          💳 Available: ${(debt.creditLimit - debt.balance).toLocaleString()} of ${debt.creditLimit.toLocaleString()}
+      {activeTab === 'active' ? (
+              activeDebts.length === 0 ? (
+                <div style={{ ...styles.empty, color: theme.textMuted }}>
+                  No active debts! You're crushing it! 🎉
+                </div>
+              ) : (
+                Object.entries(groupedDebts).map(([type, typeDebts]) => (
+                  <div key={type} style={styles.group}>
+                    <h2 style={{ ...styles.groupTitle, color: theme.textSecondary }}>
+                      {debtTypeLabel(typeDebts[0])}
+                    </h2>
+                    {typeDebts.map((debt) => (
+                      <div
+                        key={debt.id}
+                        style={{
+                          ...styles.card,
+                          backgroundColor: theme.cardBackground,
+                          boxShadow: hoveredCard === debt.id ? theme.shadowHover : theme.shadow,
+                          transform: hoveredCard === debt.id ? 'translateY(-4px)' : 'translateY(0)',
+                          transition: 'all 0.2s ease',
+                          border: `1px solid ${theme.border}`,
+                        }}
+                        onMouseEnter={() => setHoveredCard(debt.id)}
+                        onMouseLeave={() => setHoveredCard(null)}
+                      >
+                        <div style={styles.cardTop}>
+                          <div>
+                            <div style={{ ...styles.debtName, color: theme.textPrimary }}>{debt.name}</div>
+                            <div style={{ ...styles.debtMeta, color: theme.textMuted }}>
+                              APR: {debt.interestRate}% • Min: ${debt.minimumPayment}/mo • Budget: ${debt.monthlyBudget}/mo
+                              {debt.debtType === 'CREDIT_CARD' && debt.creditLimit && (
+                                <div style={{
+                                  marginTop: '0.4rem',
+                                  backgroundColor: theme.accentLight,
+                                  color: theme.primary,
+                                  borderRadius: '6px',
+                                  padding: '0.25rem 0.5rem',
+                                  fontSize: '0.8rem',
+                                  fontWeight: '600',
+                                  display: 'inline-block',
+                                }}>
+                                  💳 Available: ${(debt.creditLimit - debt.balance).toLocaleString()} of ${debt.creditLimit.toLocaleString()}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div style={{ ...styles.balance, color: theme.primary }}>
+                            ${debt.balance.toLocaleString()}
+                          </div>
                         </div>
-                      )}
+                        <div style={styles.cardActions}>
+                          <button
+                            style={{ ...styles.paidButton, backgroundColor: '#10b981', color: 'white' }}
+                            onClick={() => handleMarkPaid(debt)}
+                          >
+                            ✅ Mark Paid
+                          </button>
+                          <button
+                            style={{ ...styles.editButton, backgroundColor: theme.primary, color: theme.textLight }}
+                            onClick={() => handleEdit(debt)}
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            style={{ ...styles.deleteButton, color: theme.danger, border: `1px solid ${theme.danger}` }}
+                            onClick={() => handleDelete(debt.id, debt.name)}
+                          >
+                            🗑️ Remove
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))
+              )
+            ) : (
+              paidDebts.length === 0 ? (
+                <div style={{ ...styles.empty, color: theme.textMuted }}>
+                  No paid off debts yet — keep going! 💪
+                </div>
+              ) : (
+                paidDebts.map((debt) => (
+                  <div
+                    key={debt.id}
+                    style={{
+                      ...styles.card,
+                      backgroundColor: theme.cardBackground,
+                      boxShadow: theme.shadow,
+                      border: `2px solid #10b981`,
+                      opacity: 0.85,
+                    }}
+                  >
+                    <div style={styles.cardTop}>
+                      <div>
+                        <div style={{ ...styles.debtName, color: theme.textPrimary }}>
+                          {debt.name}
+                        </div>
+                        <div style={{ color: '#10b981', fontSize: '0.85rem', fontWeight: '600' }}>
+                          ✅ Paid Off — Original balance: ${debt.balance.toLocaleString()}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '2rem' }}>🎉</div>
+                    </div>
+                    <div style={styles.cardActions}>
+                      <button
+                        style={{ ...styles.deleteButton, color: theme.danger, border: `1px solid ${theme.danger}` }}
+                        onClick={() => handleDelete(debt.id, debt.name)}
+                      >
+                        🗑️ Remove
+                      </button>
                     </div>
                   </div>
-                  <div style={{ ...styles.balance, color: theme.primary }}>
-                    ${debt.balance.toLocaleString()}
-                  </div>
-                </div>
-                <div style={styles.cardActions}>
-                  <button
-                    style={{ ...styles.editButton, backgroundColor: theme.primary, color: theme.textLight }}
-                    onClick={() => handleEdit(debt)}
-                  >
-                    ✏️ Edit
-                  </button>
-                  <button
-                    style={{ ...styles.deleteButton, color: theme.danger, border: `1px solid ${theme.danger}` }}
-                    onClick={() => handleDelete(debt.id, debt.name)}
-                  >
-                    🗑️ Remove
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ))
-      )}
+                ))
+              )
+            )}
 
       {/* Delete Confirmation Modal */}
       {deleteModal.show && (
@@ -594,6 +681,30 @@ const styles = {
     fontWeight: '600',
     fontFamily: "'Poppins', sans-serif",
   },
+  tabs: {
+      display: 'flex',
+      gap: '2rem',
+      marginBottom: '1.5rem',
+      borderBottom: '1px solid #e8e8e8',
+    },
+    tab: {
+      backgroundColor: 'transparent',
+      border: 'none',
+      padding: '0.75rem 0',
+      fontSize: '1rem',
+      cursor: 'pointer',
+      fontFamily: "'Poppins', sans-serif",
+      transition: 'all 0.2s ease',
+    },
+    paidButton: {
+      border: 'none',
+      borderRadius: '6px',
+      padding: '0.4rem 1rem',
+      cursor: 'pointer',
+      fontSize: '0.85rem',
+      fontWeight: '500',
+      fontFamily: "'Poppins', sans-serif",
+    },
 };
 
 export default Debts;

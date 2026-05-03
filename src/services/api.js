@@ -30,3 +30,5 @@ export const getDashboard = () => api.get('/dashboard');
 
 // Savings Projection
 export const getSavingsProjections = () => api.get('/savings-projection');
+
+export const markDebtPaidOff = (id) => api.put(`/debts/${id}`, { paidOff: true });
