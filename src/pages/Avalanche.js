@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { calculateSnowball, getDebts } from '../services/api';
+import { calculateAvalanche, getDebts } from '../services/api';
 import {
   LineChart,
   Line,
@@ -11,41 +11,34 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-function Snowball({ theme }) {
-  const [snowballData, setSnowballData] = useState([]);
+function Avalanche({ theme }) {
+  const [avalancheData, setAvalancheData] = useState([]);
   const [debts, setDebts] = useState([]);
   const [extraPayment, setExtraPayment] = useState(0);
   const [loading, setLoading] = useState(true);
   const [monthsToFree, setMonthsToFree] = useState(0);
   const [payoffOrder, setPayoffOrder] = useState([]);
-  const [method, setMethod] = useState('snowball');
 
   useEffect(() => {
-      getDebts().then((res) => {
-        setDebts(res.data);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        fetchSnowball(0, res.data);
-      });
-    }, []);
-
+    getDebts().then((res) => {
+      const activeDebts = res.data.filter((d) => !d.paidOff);
+      setDebts(activeDebts);
+      fetchAvalanche(0, activeDebts);
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => {
-      if (debts.length > 0) {
-        fetchSnowball(extraPayment, debts);
-      }
-    }, [method]);
+  }, []);
 
-  const fetchSnowball = (extra, debtList) => {
-      setLoading(true);
-      calculateSnowball(extra)
-        .then((res) => {
-          setSnowballData(res.data);
-          setMonthsToFree(res.data.length);
-          calculatePayoffOrder(res.data, debtList || debts);
-          setLoading(false);
-        })
-        .catch((err) => console.error(err));
-    };
+  const fetchAvalanche = (extra, debtList) => {
+    setLoading(true);
+    calculateAvalanche(extra)
+      .then((res) => {
+        setAvalancheData(res.data);
+        setMonthsToFree(res.data.length);
+        calculatePayoffOrder(res.data, debtList || debts);
+        setLoading(false);
+      })
+      .catch((err) => console.error(err));
+  };
 
   const calculatePayoffOrder = (data, debtList) => {
     if (!data.length || !debtList.length) return;
@@ -53,9 +46,7 @@ function Snowball({ theme }) {
     const debtNames = debtList.map((d) => d.name);
 
     debtNames.forEach((name) => {
-      const payoffMonth = data.findIndex(
-        (month) => month[name] === 0
-      );
+      const payoffMonth = data.findIndex((month) => month[name] === 0);
       if (payoffMonth !== -1) {
         order.push({ name, month: payoffMonth + 1 });
       }
@@ -66,7 +57,7 @@ function Snowball({ theme }) {
   };
 
   const handleCalculate = () => {
-    fetchSnowball(extraPayment, debts);
+    fetchAvalanche(extraPayment, debts);
   };
 
   const debtNames = debts.map((d) => d.name);
@@ -88,54 +79,21 @@ function Snowball({ theme }) {
   });
 
   if (loading) return (
-    <div style={{ ...styles.loading, color: theme.textMuted }}>
-      Calculating your payoff plan...
+    <div style={{ padding: '2rem', textAlign: 'center', color: theme.textMuted }}>
+      Calculating your avalanche plan...
     </div>
   );
 
   return (
     <div style={{ ...styles.container, fontFamily: "'Poppins', sans-serif" }}>
       <h1 style={{ ...styles.title, color: theme.primary }}>
-        {method === 'snowball' ? 'Snowball Calculator ❄️' : 'Avalanche Calculator 🌊'}
+        Avalanche Calculator 🌊
       </h1>
       <p style={{ ...styles.subtitle, color: theme.textSecondary }}>
-        The snowball method pays off your smallest debt first, then rolls that
-        payment into the next one. Add extra monthly payments to get debt free
-        even faster!
+        The avalanche method pays off your highest interest debt first, saving
+        you the most money overall. It takes more discipline but puts more money
+        back in your pocket!
       </p>
-
-      {/* Method Toggle */}
-            <div style={styles.methodToggle}>
-              <button
-                style={{
-                  ...styles.methodButton,
-                  backgroundColor: method === 'snowball' ? theme.primary : 'transparent',
-                  color: method === 'snowball' ? theme.textLight : theme.primary,
-                  border: `2px solid ${theme.primary}`,
-                }}
-                onClick={() => setMethod('snowball')}
-              >
-                ❄️ Snowball
-              </button>
-              <button
-                style={{
-                  ...styles.methodButton,
-                  backgroundColor: method === 'avalanche' ? theme.primary : 'transparent',
-                  color: method === 'avalanche' ? theme.textLight : theme.primary,
-                  border: `2px solid ${theme.primary}`,
-                }}
-                onClick={() => setMethod('avalanche')}
-              >
-                🌊 Avalanche
-              </button>
-            </div>
-
-            {/* Method Description */}
-            <p style={{ ...styles.methodDesc, color: theme.textMuted }}>
-              {method === 'snowball'
-                ? '❄️ Snowball: Pay smallest balance first. Faster wins, great for motivation.'
-                : '🌊 Avalanche: Pay highest interest first. Saves the most money overall.'}
-            </p>
 
       {/* Extra Payment Control */}
       <div style={{
@@ -175,21 +133,21 @@ function Snowball({ theme }) {
       </div>
 
       {/* Result Banner */}
-            <div style={{
-              ...styles.resultBanner,
-              backgroundColor: theme.accent,
-              color: '#051F45',
-            }}>
-              <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>
-                With <strong>${extraPayment}</strong> extra per month
-              </div>
-              <div style={{ fontSize: '1.4rem', fontWeight: '700', color: '#051F45', margin: '0.25rem 0' }}>
-                Debt free by {debtFreeDateString} 🎉
-              </div>
-              <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>
-                That's {monthsToFree} months ({(monthsToFree / 12).toFixed(1)} years) away
-              </div>
-            </div>
+      <div style={{
+        ...styles.resultBanner,
+        backgroundColor: theme.accent,
+        color: '#051F45',
+      }}>
+        <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>
+          With <strong>${extraPayment}</strong> extra per month
+        </div>
+        <div style={{ fontSize: '1.4rem', fontWeight: '700', color: '#051F45', margin: '0.25rem 0' }}>
+          Debt free by {debtFreeDateString} 🎉
+        </div>
+        <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>
+          That's {monthsToFree} months ({(monthsToFree / 12).toFixed(1)} years) away
+        </div>
+      </div>
 
       {/* Payoff Order */}
       {payoffOrder.length > 0 && (
@@ -202,8 +160,8 @@ function Snowball({ theme }) {
           <h2 style={{ ...styles.sectionTitle, color: theme.primary }}>
             🎯 Debt Payoff Order
           </h2>
-          <p style={{ ...styles.payoffSubtitle, color: theme.textMuted }}>
-            Focus on these debts in this order using the snowball method:
+          <p style={{ fontSize: '0.85rem', color: theme.textMuted, marginBottom: '1rem' }}>
+            Focus on these debts in this order — highest interest rate first:
           </p>
           {payoffOrder.map((item, index) => (
             <div
@@ -225,7 +183,7 @@ function Snowball({ theme }) {
                 <div style={{ ...styles.payoffName, color: theme.textPrimary }}>
                   {item.name}
                 </div>
-                <div style={{ ...styles.payoffMonth, color: theme.textMuted }}>
+                <div style={{ fontSize: '0.8rem', color: theme.textMuted, marginTop: '0.2rem' }}>
                   Paid off by month {item.month} — {(() => {
                     const d = new Date();
                     d.setMonth(d.getMonth() + item.month);
@@ -233,7 +191,7 @@ function Snowball({ theme }) {
                   })()}
                 </div>
               </div>
-              <div style={{ ...styles.payoffBadge, color: theme.primary }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: '600', color: theme.primary }}>
                 🏁 Month {item.month}
               </div>
             </div>
@@ -243,8 +201,8 @@ function Snowball({ theme }) {
 
       {/* Chart */}
       {debts.length === 0 ? (
-        <div style={{ ...styles.empty, color: theme.textMuted }}>
-          Add debts on the My Debts page to see your snowball plan!
+        <div style={{ textAlign: 'center', color: theme.textMuted, padding: '3rem' }}>
+          Add debts on the My Debts page to see your avalanche plan!
         </div>
       ) : (
         <div style={{
@@ -258,7 +216,7 @@ function Snowball({ theme }) {
           </h2>
           <ResponsiveContainer width="100%" height={400}>
             <LineChart
-              data={snowballData}
+              data={avalancheData}
               margin={{ top: 10, right: 30, left: 20, bottom: 40 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke={theme.border} />
@@ -318,15 +276,15 @@ function Snowball({ theme }) {
         backgroundColor: theme.primary,
         color: theme.textLight,
       }}>
-        <h3 style={{ ...styles.tipsTitle, color: theme.accent }}>
-          💡 GirlMath Tips
+        <h3 style={{ color: theme.accent, fontWeight: '600', marginBottom: '1rem' }}>
+          💡 Avalanche Tips
         </h3>
-        <ul style={styles.tipsList}>
-          <li>Even $50 extra per month can save you thousands in interest.</li>
-          <li>Once a debt is paid off, roll that full payment into the next one.</li>
-          <li>Celebrate every debt you pay off — it's a big deal! 🎉</li>
-          <li>If a creditor sues you, consider seeking free legal aid in your area.</li>
-          <li>Your credit score improves as your utilization drops — keep going! 📈</li>
+        <ul style={{ lineHeight: '2', paddingLeft: '1.25rem', opacity: 0.9 }}>
+          <li>Focus every extra dollar on your highest interest debt first.</li>
+          <li>You'll pay less interest overall compared to the snowball method.</li>
+          <li>It requires more patience — the first payoff takes longer.</li>
+          <li>Once the highest interest debt is gone, the savings accelerate! 🚀</li>
+          <li>Compare both methods to find what works best for your situation.</li>
         </ul>
       </div>
     </div>
@@ -400,10 +358,6 @@ const styles = {
     fontWeight: '600',
     marginBottom: '0.5rem',
   },
-  payoffSubtitle: {
-    fontSize: '0.85rem',
-    marginBottom: '1rem',
-  },
   payoffItem: {
     borderRadius: '12px',
     padding: '1rem',
@@ -430,15 +384,6 @@ const styles = {
     fontWeight: '600',
     fontSize: '0.95rem',
   },
-  payoffMonth: {
-    fontSize: '0.8rem',
-    marginTop: '0.2rem',
-  },
-  payoffBadge: {
-    fontSize: '0.85rem',
-    fontWeight: '600',
-    flexShrink: 0,
-  },
   chartCard: {
     borderRadius: '16px',
     padding: '1.5rem',
@@ -449,45 +394,6 @@ const styles = {
     padding: '1.5rem',
     marginBottom: '2rem',
   },
-  tipsTitle: {
-    fontWeight: '600',
-    marginBottom: '1rem',
-    fontSize: '1.1rem',
-  },
-  tipsList: {
-    lineHeight: '2',
-    paddingLeft: '1.25rem',
-    opacity: 0.9,
-  },
-  empty: {
-    textAlign: 'center',
-    fontSize: '1.1rem',
-    padding: '3rem',
-  },
-  loading: {
-    padding: '2rem',
-    textAlign: 'center',
-    fontSize: '1.1rem',
-  },
-  methodToggle: {
-      display: 'flex',
-      gap: '1rem',
-      marginBottom: '1rem',
-    },
-    methodButton: {
-      borderRadius: '8px',
-      padding: '0.6rem 1.5rem',
-      fontSize: '0.95rem',
-      cursor: 'pointer',
-      fontWeight: '600',
-      fontFamily: "'Poppins', sans-serif",
-      transition: 'all 0.2s ease',
-    },
-    methodDesc: {
-      fontSize: '0.85rem',
-      marginBottom: '1.5rem',
-      fontStyle: 'italic',
-    },
 };
 
-export default Snowball;
+export default Avalanche;

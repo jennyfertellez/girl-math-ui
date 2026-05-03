@@ -32,3 +32,7 @@ export const getDashboard = () => api.get('/dashboard');
 export const getSavingsProjections = () => api.get('/savings-projection');
 
 export const markDebtPaidOff = (id) => api.put(`/debts/${id}`, { paidOff: true });
+
+// Avalanche
+export const calculateAvalanche = (extraPayment = 0) =>
+  api.get(`/avalanche/calculate?extraPayment=${extraPayment}`);

@@ -10,6 +10,7 @@ function Navbar({ theme, isDarkMode, setIsDarkMode }) {
     { path: '/debts', label: 'My Debts' },
     { path: '/savings', label: 'Savings Goals' },
     { path: '/snowball', label: 'Snowball Calculator' },
+    { path: '/avalanche', label: '🌊 Avalanche' },
   ];
 
   return (

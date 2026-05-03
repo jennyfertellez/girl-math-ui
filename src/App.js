@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 import Debts from './pages/Debts';
 import SavingsGoals from './pages/SavingsGoals';
 import Snowball from './pages/Snowball';
+import Avalanche from './pages/Avalanche';
 import Navbar from './components/Navbar';
 import { lightTheme, darkTheme } from './theme';
 
@@ -25,6 +26,7 @@ function App() {
           <Route path="/debts" element={<Debts theme={theme} />} />
           <Route path="/savings" element={<SavingsGoals theme={theme} />} />
           <Route path="/snowball" element={<Snowball theme={theme} />} />
+          <Route path="/avalanche" element={<Avalanche theme={theme} />} />
         </Routes>
       </div>
     </Router>
