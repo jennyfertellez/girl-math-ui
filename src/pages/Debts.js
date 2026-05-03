@@ -14,6 +14,7 @@ function Debts({ theme }) {
     minimumPayment: '',
     monthlyBudget: '',
     debtType: 'CREDIT_CARD',
+    creditLimit: '',
   });
 
   useEffect(() => {
@@ -42,6 +43,7 @@ function Debts({ theme }) {
       minimumPayment: debt.minimumPayment,
       monthlyBudget: debt.monthlyBudget,
       debtType: debt.debtType,
+      creditLimit: debt.creditLimit || '',
     });
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -55,6 +57,7 @@ function Debts({ theme }) {
       minimumPayment: parseFloat(form.minimumPayment),
       monthlyBudget: parseFloat(form.monthlyBudget),
       debtType: form.debtType,
+        creditLimit: form.creditLimit ? parseFloat(form.creditLimit) : null,
     };
 
     const action = editingDebt
@@ -77,6 +80,7 @@ function Debts({ theme }) {
       minimumPayment: '',
       monthlyBudget: '',
       debtType: 'CREDIT_CARD',
+      creditLimit: '',
     });
   };
 
@@ -182,20 +186,35 @@ function Debts({ theme }) {
               />
             </div>
             <div style={styles.inputGroup}>
-              <label style={{ ...styles.label, color: theme.textSecondary }}>Debt Type</label>
-              <select
-                style={{ ...styles.input, border: `1px solid ${theme.border}`, color: theme.textPrimary }}
-                name="debtType"
-                value={form.debtType}
-                onChange={handleChange}
-              >
-                <option value="CREDIT_CARD">💳 Credit Card</option>
-                <option value="STUDENT_LOAN">🎓 Student Loan</option>
-                <option value="MEDICAL">🏥 Medical</option>
-                <option value="OTHER">📋 Other</option>
-              </select>
-            </div>
-          </div>
+                          <label style={{ ...styles.label, color: theme.textSecondary }}>Debt Type</label>
+                          <select
+                            style={{ ...styles.input, border: `1px solid ${theme.border}`, color: theme.textPrimary }}
+                            name="debtType"
+                            value={form.debtType}
+                            onChange={handleChange}
+                          >
+                            <option value="CREDIT_CARD">💳 Credit Card</option>
+                            <option value="STUDENT_LOAN">🎓 Student Loan</option>
+                            <option value="MEDICAL">🏥 Medical</option>
+                            <option value="OTHER">📋 Other</option>
+                          </select>
+                        </div>
+                        {form.debtType === 'CREDIT_CARD' && (
+                          <div style={styles.inputGroup}>
+                            <label style={{ ...styles.label, color: theme.textSecondary }}>
+                              Credit Limit ($)
+                            </label>
+                            <input
+                              style={{ ...styles.input, border: `1px solid ${theme.border}`, color: theme.textPrimary }}
+                              name="creditLimit"
+                              placeholder="e.g. 5000"
+                              type="number"
+                              value={form.creditLimit}
+                              onChange={handleChange}
+                            />
+                          </div>
+                        )}
+                      </div>
           <div style={styles.formButtons}>
             <button
               style={{ ...styles.submitButton, backgroundColor: theme.primary, color: theme.textLight }}
@@ -241,8 +260,22 @@ function Debts({ theme }) {
                   <div>
                     <div style={{ ...styles.debtName, color: theme.textPrimary }}>{debt.name}</div>
                     <div style={{ ...styles.debtMeta, color: theme.textMuted }}>
-                      APR: {debt.interestRate}% • Min: ${debt.minimumPayment}/mo • Budget: ${debt.monthlyBudget}/mo
-                    </div>
+                                          APR: {debt.interestRate}% • Min: ${debt.minimumPayment}/mo • Budget: ${debt.monthlyBudget}/mo
+                                          {debt.debtType === 'CREDIT_CARD' && debt.creditLimit && (
+                                            <div style={{
+                                              marginTop: '0.4rem',
+                                              backgroundColor: theme.accentLight,
+                                              color: theme.primary,
+                                              borderRadius: '6px',
+                                              padding: '0.25rem 0.5rem',
+                                              fontSize: '0.8rem',
+                                              fontWeight: '600',
+                                              display: 'inline-block',
+                                            }}>
+                                              💳 Available: ${(debt.creditLimit - debt.balance).toLocaleString()} of ${debt.creditLimit.toLocaleString()}
+                                            </div>
+                                          )}
+                                        </div>
                   </div>
                   <div style={{ ...styles.balance, color: theme.primary }}>
                     ${debt.balance.toLocaleString()}

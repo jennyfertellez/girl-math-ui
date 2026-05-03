@@ -134,23 +134,21 @@ function Snowball({ theme }) {
       </div>
 
       {/* Result Banner */}
-      <div style={{
-        ...styles.resultBanner,
-        backgroundColor: theme.primary,
-        color: theme.textLight,
-      }}>
-        <div>
-          <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>
-            With <strong>${extraPayment}</strong> extra per month
-          </div>
-          <div style={{ fontSize: '1.4rem', fontWeight: '700', color: theme.accent, margin: '0.25rem 0' }}>
-            Debt free by {debtFreeDateString} 🎉
-          </div>
-          <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>
-            That's {monthsToFree} months ({(monthsToFree / 12).toFixed(1)} years) away
-          </div>
-        </div>
-      </div>
+            <div style={{
+              ...styles.resultBanner,
+              backgroundColor: theme.accent,
+              color: '#051F45',
+            }}>
+              <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>
+                With <strong>${extraPayment}</strong> extra per month
+              </div>
+              <div style={{ fontSize: '1.4rem', fontWeight: '700', color: '#051F45', margin: '0.25rem 0' }}>
+                Debt free by {debtFreeDateString} 🎉
+              </div>
+              <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>
+                That's {monthsToFree} months ({(monthsToFree / 12).toFixed(1)} years) away
+              </div>
+            </div>
 
       {/* Payoff Order */}
       {payoffOrder.length > 0 && (
