@@ -7,6 +7,7 @@ function Debts({ theme }) {
   const [showForm, setShowForm] = useState(false);
   const [editingDebt, setEditingDebt] = useState(null);
   const [hoveredCard, setHoveredCard] = useState(null);
+  const [deleteModal, setDeleteModal] = useState({ show: false, id: null, name: '' });
   const [form, setForm] = useState({
     name: '',
     balance: '',
@@ -15,6 +16,7 @@ function Debts({ theme }) {
     monthlyBudget: '',
     debtType: 'CREDIT_CARD',
     creditLimit: '',
+    customDebtType: '',
   });
 
   useEffect(() => {
@@ -44,12 +46,38 @@ function Debts({ theme }) {
       monthlyBudget: debt.monthlyBudget,
       debtType: debt.debtType,
       creditLimit: debt.creditLimit || '',
+      customDebtType: debt.customDebtType || '',
     });
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSubmit = () => {
+    if (!form.name.trim()) {
+      alert('Please enter a debt name.');
+      return;
+    }
+    if (!form.balance || isNaN(parseFloat(form.balance))) {
+      alert('Please enter a valid balance.');
+      return;
+    }
+    if (!form.interestRate && form.interestRate !== 0) {
+      alert('Please enter a valid interest rate.');
+      return;
+    }
+    if (!form.minimumPayment || isNaN(parseFloat(form.minimumPayment))) {
+      alert('Please enter a valid minimum payment.');
+      return;
+    }
+    if (!form.monthlyBudget || isNaN(parseFloat(form.monthlyBudget))) {
+      alert('Please enter a valid monthly budget.');
+      return;
+    }
+    if (form.debtType === 'OTHER' && !form.customDebtType.trim()) {
+      alert('Please describe your debt type.');
+      return;
+    }
+
     const debt = {
       name: form.name,
       balance: parseFloat(form.balance),
@@ -57,7 +85,8 @@ function Debts({ theme }) {
       minimumPayment: parseFloat(form.minimumPayment),
       monthlyBudget: parseFloat(form.monthlyBudget),
       debtType: form.debtType,
-        creditLimit: form.creditLimit ? parseFloat(form.creditLimit) : null,
+      creditLimit: form.creditLimit ? parseFloat(form.creditLimit) : null,
+      customDebtType: form.debtType === 'OTHER' ? form.customDebtType : null,
     };
 
     const action = editingDebt
@@ -81,29 +110,41 @@ function Debts({ theme }) {
       monthlyBudget: '',
       debtType: 'CREDIT_CARD',
       creditLimit: '',
+      customDebtType: '',
     });
   };
 
   const handleDelete = (id, name) => {
-    if (window.confirm(`Are you sure you want to remove "${name}"? This cannot be undone.`)) {
-      deleteDebt(id).then(() => fetchDebts());
-    }
+    setDeleteModal({ show: true, id, name });
   };
 
-  const debtTypeLabel = (type) => {
+  const confirmDelete = () => {
+    deleteDebt(deleteModal.id).then(() => {
+      fetchDebts();
+      setDeleteModal({ show: false, id: null, name: '' });
+    });
+  };
+
+  const cancelDelete = () => {
+    setDeleteModal({ show: false, id: null, name: '' });
+  };
+
+  const debtTypeLabel = (debt) => {
     const labels = {
       CREDIT_CARD: '💳 Credit Card',
       STUDENT_LOAN: '🎓 Student Loan',
       MEDICAL: '🏥 Medical',
-      OTHER: '📋 Other',
+      OTHER: `📋 ${debt.customDebtType || 'Other'}`,
     };
-    return labels[type] || type;
+    return labels[debt.debtType] || debt.debtType;
   };
 
-  // Group debts by type
   const groupedDebts = debts.reduce((acc, debt) => {
-    if (!acc[debt.debtType]) acc[debt.debtType] = [];
-    acc[debt.debtType].push(debt);
+    const key = debt.debtType === 'OTHER' && debt.customDebtType
+      ? `OTHER_${debt.customDebtType}`
+      : debt.debtType;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(debt);
     return acc;
   }, {});
 
@@ -186,35 +227,47 @@ function Debts({ theme }) {
               />
             </div>
             <div style={styles.inputGroup}>
-                          <label style={{ ...styles.label, color: theme.textSecondary }}>Debt Type</label>
-                          <select
-                            style={{ ...styles.input, border: `1px solid ${theme.border}`, color: theme.textPrimary }}
-                            name="debtType"
-                            value={form.debtType}
-                            onChange={handleChange}
-                          >
-                            <option value="CREDIT_CARD">💳 Credit Card</option>
-                            <option value="STUDENT_LOAN">🎓 Student Loan</option>
-                            <option value="MEDICAL">🏥 Medical</option>
-                            <option value="OTHER">📋 Other</option>
-                          </select>
-                        </div>
-                        {form.debtType === 'CREDIT_CARD' && (
-                          <div style={styles.inputGroup}>
-                            <label style={{ ...styles.label, color: theme.textSecondary }}>
-                              Credit Limit ($)
-                            </label>
-                            <input
-                              style={{ ...styles.input, border: `1px solid ${theme.border}`, color: theme.textPrimary }}
-                              name="creditLimit"
-                              placeholder="e.g. 5000"
-                              type="number"
-                              value={form.creditLimit}
-                              onChange={handleChange}
-                            />
-                          </div>
-                        )}
-                      </div>
+              <label style={{ ...styles.label, color: theme.textSecondary }}>Debt Type</label>
+              <select
+                style={{ ...styles.input, border: `1px solid ${theme.border}`, color: theme.textPrimary }}
+                name="debtType"
+                value={form.debtType}
+                onChange={handleChange}
+              >
+                <option value="CREDIT_CARD">💳 Credit Card</option>
+                <option value="STUDENT_LOAN">🎓 Student Loan</option>
+                <option value="MEDICAL">🏥 Medical</option>
+                <option value="OTHER">📋 Other</option>
+              </select>
+            </div>
+            {form.debtType === 'CREDIT_CARD' && (
+              <div style={styles.inputGroup}>
+                <label style={{ ...styles.label, color: theme.textSecondary }}>Credit Limit ($)</label>
+                <input
+                  style={{ ...styles.input, border: `1px solid ${theme.border}`, color: theme.textPrimary }}
+                  name="creditLimit"
+                  placeholder="e.g. 5000"
+                  type="number"
+                  value={form.creditLimit}
+                  onChange={handleChange}
+                />
+              </div>
+            )}
+            {form.debtType === 'OTHER' && (
+              <div style={styles.inputGroup}>
+                <label style={{ ...styles.label, color: theme.textSecondary }}>
+                  Describe Your Debt
+                </label>
+                <input
+                  style={{ ...styles.input, border: `1px solid ${theme.border}`, color: theme.textPrimary }}
+                  name="customDebtType"
+                  placeholder="e.g. Personal Loan, Car Repair"
+                  value={form.customDebtType}
+                  onChange={handleChange}
+                />
+              </div>
+            )}
+          </div>
           <div style={styles.formButtons}>
             <button
               style={{ ...styles.submitButton, backgroundColor: theme.primary, color: theme.textLight }}
@@ -240,7 +293,7 @@ function Debts({ theme }) {
         Object.entries(groupedDebts).map(([type, typeDebts]) => (
           <div key={type} style={styles.group}>
             <h2 style={{ ...styles.groupTitle, color: theme.textSecondary }}>
-              {debtTypeLabel(type)}
+              {debtTypeLabel(typeDebts[0])}
             </h2>
             {typeDebts.map((debt) => (
               <div
@@ -260,22 +313,22 @@ function Debts({ theme }) {
                   <div>
                     <div style={{ ...styles.debtName, color: theme.textPrimary }}>{debt.name}</div>
                     <div style={{ ...styles.debtMeta, color: theme.textMuted }}>
-                                          APR: {debt.interestRate}% • Min: ${debt.minimumPayment}/mo • Budget: ${debt.monthlyBudget}/mo
-                                          {debt.debtType === 'CREDIT_CARD' && debt.creditLimit && (
-                                            <div style={{
-                                              marginTop: '0.4rem',
-                                              backgroundColor: theme.accentLight,
-                                              color: theme.primary,
-                                              borderRadius: '6px',
-                                              padding: '0.25rem 0.5rem',
-                                              fontSize: '0.8rem',
-                                              fontWeight: '600',
-                                              display: 'inline-block',
-                                            }}>
-                                              💳 Available: ${(debt.creditLimit - debt.balance).toLocaleString()} of ${debt.creditLimit.toLocaleString()}
-                                            </div>
-                                          )}
-                                        </div>
+                      APR: {debt.interestRate}% • Min: ${debt.minimumPayment}/mo • Budget: ${debt.monthlyBudget}/mo
+                      {debt.debtType === 'CREDIT_CARD' && debt.creditLimit && (
+                        <div style={{
+                          marginTop: '0.4rem',
+                          backgroundColor: theme.accentLight,
+                          color: theme.primary,
+                          borderRadius: '6px',
+                          padding: '0.25rem 0.5rem',
+                          fontSize: '0.8rem',
+                          fontWeight: '600',
+                          display: 'inline-block',
+                        }}>
+                          💳 Available: ${(debt.creditLimit - debt.balance).toLocaleString()} of ${debt.creditLimit.toLocaleString()}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div style={{ ...styles.balance, color: theme.primary }}>
                     ${debt.balance.toLocaleString()}
@@ -299,6 +352,39 @@ function Debts({ theme }) {
             ))}
           </div>
         ))
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal.show && (
+        <div style={styles.modalOverlay}>
+          <div style={{
+            ...styles.modal,
+            backgroundColor: theme.cardBackground,
+            boxShadow: theme.shadowHover,
+          }}>
+            <div style={styles.modalEmoji}>🗑️</div>
+            <h3 style={{ ...styles.modalTitle, color: theme.primary }}>
+              Remove Debt
+            </h3>
+            <p style={{ ...styles.modalMessage, color: theme.textSecondary }}>
+              Are you sure you want to remove <strong>"{deleteModal.name}"</strong>? This cannot be undone.
+            </p>
+            <div style={styles.modalButtons}>
+              <button
+                style={{ ...styles.modalCancel, color: theme.primary, border: `1px solid ${theme.primary}` }}
+                onClick={cancelDelete}
+              >
+                Keep It
+              </button>
+              <button
+                style={{ ...styles.modalConfirm, backgroundColor: theme.danger, color: 'white' }}
+                onClick={confirmDelete}
+              >
+                Yes, Remove
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -451,6 +537,62 @@ const styles = {
     padding: '2rem',
     textAlign: 'center',
     fontSize: '1.1rem',
+  },
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(5, 31, 69, 0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  },
+  modal: {
+    borderRadius: '20px',
+    padding: '2rem',
+    maxWidth: '400px',
+    width: '90%',
+    textAlign: 'center',
+  },
+  modalEmoji: {
+    fontSize: '3rem',
+    marginBottom: '1rem',
+  },
+  modalTitle: {
+    fontSize: '1.3rem',
+    fontWeight: '700',
+    marginBottom: '0.75rem',
+  },
+  modalMessage: {
+    fontSize: '0.95rem',
+    lineHeight: '1.6',
+    marginBottom: '1.5rem',
+  },
+  modalButtons: {
+    display: 'flex',
+    gap: '1rem',
+    justifyContent: 'center',
+  },
+  modalCancel: {
+    backgroundColor: 'transparent',
+    borderRadius: '8px',
+    padding: '0.75rem 1.5rem',
+    fontSize: '0.95rem',
+    cursor: 'pointer',
+    fontWeight: '600',
+    fontFamily: "'Poppins', sans-serif",
+  },
+  modalConfirm: {
+    border: 'none',
+    borderRadius: '8px',
+    padding: '0.75rem 1.5rem',
+    fontSize: '0.95rem',
+    cursor: 'pointer',
+    fontWeight: '600',
+    fontFamily: "'Poppins', sans-serif",
   },
 };
 
