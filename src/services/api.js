@@ -36,3 +36,13 @@ export const markDebtPaidOff = (id) => api.put(`/debts/${id}`, { paidOff: true }
 // Avalanche
 export const calculateAvalanche = (extraPayment = 0) =>
   api.get(`/avalanche/calculate?extraPayment=${extraPayment}`);
+
+// Payments
+export const logPayment = (debtId, amount, notes) =>
+  api.post(`/payments/${debtId}`, { amount, notes });
+
+export const getPaymentsByDebt = (debtId) =>
+  api.get(`/payments/${debtId}`);
+
+export const getAllPayments = () =>
+  api.get('/payments');

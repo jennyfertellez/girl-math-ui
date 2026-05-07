@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getDebts, addDebt, deleteDebt, updateDebt } from '../services/api';
+import { getDebts, addDebt, deleteDebt, updateDebt, logPayment, getPaymentsByDebt } from '../services/api';
 
 function Debts({ theme }) {
   const [debts, setDebts] = useState([]);
@@ -9,6 +9,10 @@ function Debts({ theme }) {
   const [hoveredCard, setHoveredCard] = useState(null);
   const [deleteModal, setDeleteModal] = useState({ show: false, id: null, name: '' });
   const [activeTab, setActiveTab] = useState('active');
+  const [paymentModal, setPaymentModal] = useState({ show: false, debt: null });
+  const [paymentHistory, setPaymentHistory] = useState({});
+  const [paymentForm, setPaymentForm] = useState({ amount: '', notes: '' });
+  const [expandedDebt, setExpandedDebt] = useState(null);
   const [form, setForm] = useState({
     name: '',
     balance: '',
@@ -129,6 +133,42 @@ function Debts({ theme }) {
   const cancelDelete = () => {
     setDeleteModal({ show: false, id: null, name: '' });
   };
+
+  const handleLogPayment = (debt) => {
+      setPaymentModal({ show: true, debt });
+      setPaymentForm({ amount: '', notes: '' });
+    };
+
+    const confirmPayment = () => {
+      if (!paymentForm.amount || isNaN(parseFloat(paymentForm.amount))) {
+        alert('Please enter a valid payment amount.');
+        return;
+      }
+      logPayment(paymentModal.debt.id, parseFloat(paymentForm.amount), paymentForm.notes)
+        .then(() => {
+          fetchDebts();
+          setPaymentModal({ show: false, debt: null });
+          setPaymentForm({ amount: '', notes: '' });
+          if (expandedDebt === paymentModal.debt.id) {
+            fetchPaymentHistory(paymentModal.debt.id);
+          }
+        });
+    };
+
+    const fetchPaymentHistory = (debtId) => {
+      getPaymentsByDebt(debtId).then((res) => {
+        setPaymentHistory((prev) => ({ ...prev, [debtId]: res.data }));
+      });
+    };
+
+    const toggleHistory = (debtId) => {
+      if (expandedDebt === debtId) {
+        setExpandedDebt(null);
+      } else {
+        setExpandedDebt(debtId);
+        fetchPaymentHistory(debtId);
+      }
+    };
 
   const handleMarkPaid = (debt) => {
     if (window.confirm(`🎉 Congrats on paying off "${debt.name}"! Mark it as paid?`)) {
@@ -376,25 +416,80 @@ function Debts({ theme }) {
                           </div>
                         </div>
                         <div style={styles.cardActions}>
-                          <button
-                            style={{ ...styles.paidButton, backgroundColor: '#10b981', color: 'white' }}
-                            onClick={() => handleMarkPaid(debt)}
-                          >
-                            ✅ Mark Paid
-                          </button>
-                          <button
-                            style={{ ...styles.editButton, backgroundColor: theme.primary, color: theme.textLight }}
-                            onClick={() => handleEdit(debt)}
-                          >
-                            ✏️ Edit
-                          </button>
-                          <button
-                            style={{ ...styles.deleteButton, color: theme.danger, border: `1px solid ${theme.danger}` }}
-                            onClick={() => handleDelete(debt.id, debt.name)}
-                          >
-                            🗑️ Remove
-                          </button>
-                        </div>
+                                          <button
+                                            style={{ ...styles.historyButton, color: theme.primary, border: `1px solid ${theme.primary}` }}
+                                            onClick={() => toggleHistory(debt.id)}
+                                          >
+                                            {expandedDebt === debt.id ? '▲ Hide History' : '▼ Payment History'}
+                                          </button>
+                                          <button
+                                            style={{ ...styles.paymentButton, backgroundColor: '#10b981', color: 'white' }}
+                                            onClick={() => handleLogPayment(debt)}
+                                          >
+                                            💰 Log Payment
+                                          </button>
+                                          <button
+                                            style={{ ...styles.paidButton, backgroundColor: '#10b981', color: 'white' }}
+                                            onClick={() => handleMarkPaid(debt)}
+                                          >
+                                            ✅ Mark Paid
+                                          </button>
+                                          <button
+                                            style={{ ...styles.editButton, backgroundColor: theme.primary, color: theme.textLight }}
+                                            onClick={() => handleEdit(debt)}
+                                          >
+                                            ✏️ Edit
+                                          </button>
+                                          <button
+                                            style={{ ...styles.deleteButton, color: theme.danger, border: `1px solid ${theme.danger}` }}
+                                            onClick={() => handleDelete(debt.id, debt.name)}
+                                          >
+                                            🗑️ Remove
+                                          </button>
+                                        </div>
+
+                                        {/* Payment History */}
+                                        {expandedDebt === debt.id && (
+                                          <div style={{
+                                            ...styles.historyContainer,
+                                            borderTop: `1px solid ${theme.border}`,
+                                            backgroundColor: theme.accentLight,
+                                          }}>
+                                            <h4 style={{ ...styles.historyTitle, color: theme.primary }}>
+                                              Payment History
+                                            </h4>
+                                            {!paymentHistory[debt.id] || paymentHistory[debt.id].length === 0 ? (
+                                              <p style={{ color: theme.textMuted, fontSize: '0.85rem' }}>
+                                                No payments logged yet.
+                                              </p>
+                                            ) : (
+                                              paymentHistory[debt.id].map((payment) => (
+                                                <div
+                                                  key={payment.id}
+                                                  style={{
+                                                    ...styles.historyItem,
+                                                    borderBottom: `1px solid ${theme.border}`,
+                                                  }}
+                                                >
+                                                  <div style={{ color: theme.textPrimary, fontWeight: '600' }}>
+                                                    💰 ${payment.amount.toLocaleString()}
+                                                  </div>
+                                                  <div style={{ color: theme.textMuted, fontSize: '0.8rem' }}>
+                                                    {payment.paymentDate}
+                                                  </div>
+                                                  <div style={{ color: theme.textSecondary, fontSize: '0.85rem' }}>
+                                                    Balance after: ${payment.balanceAfterPayment.toLocaleString()}
+                                                  </div>
+                                                  {payment.notes && (
+                                                    <div style={{ color: theme.textMuted, fontSize: '0.8rem', fontStyle: 'italic' }}>
+                                                      {payment.notes}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              ))
+                                            )}
+                                          </div>
+                                        )}
                       </div>
                     ))}
                   </div>
@@ -439,6 +534,73 @@ function Debts({ theme }) {
                   </div>
                 ))
               )
+            )}
+
+      {/* Log Payment Modal */}
+            {paymentModal.show && (
+              <div style={styles.modalOverlay}>
+                <div style={{
+                  ...styles.modal,
+                  backgroundColor: theme.cardBackground,
+                  boxShadow: theme.shadowHover,
+                }}>
+                  <div style={styles.modalEmoji}>💰</div>
+                  <h3 style={{ ...styles.modalTitle, color: theme.primary }}>
+                    Log Payment
+                  </h3>
+                  <p style={{ ...styles.modalMessage, color: theme.textSecondary }}>
+                    Recording payment for <strong>{paymentModal.debt?.name}</strong>
+                  </p>
+                  <div style={styles.inputGroup}>
+                    <label style={{ ...styles.label, color: theme.textSecondary }}>
+                      Payment Amount ($)
+                    </label>
+                    <input
+                      style={{
+                        ...styles.input,
+                        border: `1px solid ${theme.border}`,
+                        color: theme.textPrimary,
+                        marginBottom: '1rem',
+                      }}
+                      type="number"
+                      placeholder="e.g. 200"
+                      value={paymentForm.amount}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+                    />
+                  </div>
+                  <div style={styles.inputGroup}>
+                    <label style={{ ...styles.label, color: theme.textSecondary }}>
+                      Notes (optional)
+                    </label>
+                    <input
+                      style={{
+                        ...styles.input,
+                        border: `1px solid ${theme.border}`,
+                        color: theme.textPrimary,
+                        marginBottom: '1.5rem',
+                      }}
+                      type="text"
+                      placeholder="e.g. Monthly minimum payment"
+                      value={paymentForm.notes}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
+                    />
+                  </div>
+                  <div style={styles.modalButtons}>
+                    <button
+                      style={{ ...styles.modalCancel, color: theme.primary, border: `1px solid ${theme.primary}` }}
+                      onClick={() => setPaymentModal({ show: false, debt: null })}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      style={{ ...styles.modalConfirm, backgroundColor: '#10b981', color: 'white' }}
+                      onClick={confirmPayment}
+                    >
+                      Log Payment
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
 
       {/* Delete Confirmation Modal */}
@@ -705,6 +867,41 @@ const styles = {
       fontWeight: '500',
       fontFamily: "'Poppins', sans-serif",
     },
+    paymentButton: {
+        border: 'none',
+        borderRadius: '6px',
+        padding: '0.4rem 1rem',
+        cursor: 'pointer',
+        fontSize: '0.85rem',
+        fontWeight: '500',
+        fontFamily: "'Poppins', sans-serif",
+      },
+      historyButton: {
+        backgroundColor: 'transparent',
+        borderRadius: '6px',
+        padding: '0.4rem 1rem',
+        cursor: 'pointer',
+        fontSize: '0.85rem',
+        fontWeight: '500',
+        fontFamily: "'Poppins', sans-serif",
+      },
+      historyContainer: {
+        marginTop: '1rem',
+        padding: '1rem',
+        borderRadius: '8px',
+      },
+      historyTitle: {
+        fontSize: '0.95rem',
+        fontWeight: '600',
+        marginBottom: '0.75rem',
+      },
+      historyItem: {
+        paddingBottom: '0.75rem',
+        marginBottom: '0.75rem',
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '0.25rem',
+      },
 };
 
 export default Debts;
