@@ -22,6 +22,7 @@ function Debts({ theme }) {
     debtType: 'CREDIT_CARD',
     creditLimit: '',
     customDebtType: '',
+    paymentDueDate: '',
   });
 
   useEffect(() => {
@@ -52,6 +53,7 @@ function Debts({ theme }) {
       debtType: debt.debtType,
       creditLimit: debt.creditLimit || '',
       customDebtType: debt.customDebtType || '',
+      paymentDueDate: debt.paymentDueDate || '',
     });
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -92,6 +94,7 @@ function Debts({ theme }) {
       debtType: form.debtType,
       creditLimit: form.creditLimit ? parseFloat(form.creditLimit) : null,
       customDebtType: form.debtType === 'OTHER' ? form.customDebtType : null,
+      paymentDueDate: form.paymentDueDate ? parseInt(form.paymentDueDate) : null,
     };
 
     const action = editingDebt
@@ -116,6 +119,7 @@ function Debts({ theme }) {
       debtType: 'CREDIT_CARD',
       creditLimit: '',
       customDebtType: '',
+      paymentDueDate: '',
     });
   };
 
@@ -184,6 +188,12 @@ function Debts({ theme }) {
       OTHER: `📋 ${debt.customDebtType || 'Other'}`,
     };
     return labels[debt.debtType] || debt.debtType;
+  };
+
+  const getOrdinal = (n) => {
+    const s = ['th', 'st', 'nd', 'rd'];
+    const v = n % 100;
+    return s[(v - 20) % 10] || s[v] || s[0];
   };
 
   const activeDebts = debts.filter((d) => !d.paidOff);
@@ -307,6 +317,21 @@ function Debts({ theme }) {
               />
             </div>
             <div style={styles.inputGroup}>
+                <label style={{ ...styles.label, color: theme.textSecondary }}>
+                  Payment Due Date (day of month)
+                </label>
+                <input
+                style={{ ...styles.input, border: `1px solid ${theme.border}`, color: theme.textPrimary }}
+                name="paymentDueDate"
+                placeholder="e.g. 15 (for the 15th)"
+                type="number"
+                min="1"
+                max="31"
+                value={form.paymentDueDate}
+                onChange={handleChange}
+              />
+            </div>
+            <div style={styles.inputGroup}>
               <label style={{ ...styles.label, color: theme.textSecondary }}>Debt Type</label>
               <select
                 style={{ ...styles.input, border: `1px solid ${theme.border}`, color: theme.textPrimary }}
@@ -392,9 +417,13 @@ function Debts({ theme }) {
                       >
                         <div style={styles.cardTop}>
                           <div>
-                            <div style={{ ...styles.debtName, color: theme.textPrimary }}>{debt.name}</div>
                             <div style={{ ...styles.debtMeta, color: theme.textMuted }}>
-                              APR: {debt.interestRate}% • Min: ${debt.minimumPayment}/mo • Budget: ${debt.monthlyBudget}/mo
+                                                  APR: {debt.interestRate}% • Min: ${debt.minimumPayment}/mo • Budget: ${debt.monthlyBudget}/mo
+                                                  {debt.paymentDueDate && (
+                                                    <span style={{ marginLeft: '0.5rem' }}>
+                                                      • Due: <strong>the {debt.paymentDueDate}{getOrdinal(debt.paymentDueDate)}</strong>
+                                                    </span>
+                                                  )}
                               {debt.debtType === 'CREDIT_CARD' && debt.creditLimit && (
                                 <div style={{
                                   marginTop: '0.4rem',
