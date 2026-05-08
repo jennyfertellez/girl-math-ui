@@ -46,3 +46,7 @@ export const getPaymentsByDebt = (debtId) =>
 
 export const getAllPayments = () =>
   api.get('/payments');
+
+// Preferences
+export const getPreferences = () => api.get('/preferences');
+export const updatePreferences = (preferences) => api.put('/preferences', preferences);

@@ -6,6 +6,7 @@ import SavingsGoals from './pages/SavingsGoals';
 import Snowball from './pages/Snowball';
 import Avalanche from './pages/Avalanche';
 import Navbar from './components/Navbar';
+import MyFinancialPlan from './pages/MyFinancialPlan';
 import { lightTheme, darkTheme } from './theme';
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
           <Route path="/savings" element={<SavingsGoals theme={theme} />} />
           <Route path="/snowball" element={<Snowball theme={theme} />} />
           <Route path="/avalanche" element={<Avalanche theme={theme} />} />
+          <Route path="/my-financial-plan" element={<MyFinancialPlan theme={theme} />} />
         </Routes>
       </div>
     </Router>

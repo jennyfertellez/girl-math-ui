@@ -9,8 +9,9 @@ function Navbar({ theme, isDarkMode, setIsDarkMode }) {
     { path: '/', label: 'Dashboard' },
     { path: '/debts', label: 'My Debts' },
     { path: '/savings', label: 'Savings Goals' },
-    { path: '/snowball', label: 'Snowball Calculator' },
-    { path: '/avalanche', label: '🌊 Avalanche' },
+    { path: '/snowball', label: 'Snowball' },
+    { path: '/avalanche', label: 'Avalanche' },
+    { path: '/my-financial-plan', label: 'My Financial Plan' },
   ];
 
   return (
